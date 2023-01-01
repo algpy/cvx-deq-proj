@@ -320,7 +320,8 @@ class MDEQNet(nn.Module):
         init_chansize = self.init_chansize
 
         self.downsample = nn.Sequential(
-            conv3x3(3, init_chansize, stride=(2 if self.downsample_times >= 1 else 1)),
+            # ???
+            conv3x3(1, init_chansize, stride=(2 if self.downsample_times >= 1 else 1)),
             nn.BatchNorm2d(init_chansize, momentum=BN_MOMENTUM, affine=True),
             nn.ReLU(inplace=True),
             conv3x3(init_chansize, init_chansize, stride=(2 if self.downsample_times >= 2 else 1)),

@@ -116,6 +116,10 @@ def main():
     optimizer = get_optimizer(config, model)
     lr_scheduler = None
 
+    # get model size 
+    trainable_params = sum(	p.numel() for p in model.parameters() if p.requires_grad)
+    print("model size: ", trainable_params)
+
     best_perf = 0.0
     best_model = False
     last_epoch = config.TRAIN.BEGIN_EPOCH
@@ -159,8 +163,8 @@ def main():
         ])
         train_dataset = datasets.ImageFolder(traindir, transform_train)
         valid_dataset = datasets.ImageFolder(valdir, transform_valid)
-    else:
-        assert dataset_name == "cifar10", "Only CIFAR-10 and ImageNet are supported at this phase"
+    elif dataset_name == 'cifar10':
+        # assert dataset_name == "cifar10", "Only CIFAR-10 and ImageNet are supported at this phase"
         classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')  # For reference
         
         normalize = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
@@ -175,13 +179,30 @@ def main():
         ])
         train_dataset = datasets.CIFAR10(root=f'{config.DATASET.ROOT}', train=True, download=True, transform=transform_train)
         valid_dataset = datasets.CIFAR10(root=f'{config.DATASET.ROOT}', train=False, download=True, transform=transform_valid)
-        
+    elif dataset_name == 'mnist':
+        normalize = transforms.Normalize(mean=33.3184/255, std=78.5675/255)
+        transform_train = transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ])
+        transform_valid = transforms.Compose([
+            transforms.ToTensor(),
+            normalize,
+        ])
+        train_dataset = datasets.MNIST(root=f'{config.DATASET.ROOT}', train=True, download=True, transform=transform_train)
+        valid_dataset = datasets.MNIST(root=f'{config.DATASET.ROOT}', train=False, download=True, transform=transform_valid)
+ 
+    else:
+        raise 'Not supported'
+
+    
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=config.TRAIN.BATCH_SIZE_PER_GPU*len(gpus),
         shuffle=True,
         num_workers=config.WORKERS,
-        pin_memory=True
+        pin_memory=True,
+        generator=torch.Generator(device='cuda')
     )
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset,
